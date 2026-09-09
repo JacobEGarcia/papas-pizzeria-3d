@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>PAPA'S PIZZERIA 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#c0392b; --red2:#e74c3c; --paper:#f7ecd7; --ink:#2c1f16;
+  --gold:#f0b429; --cream:#fff8ea; --shade:rgba(20,10,5,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a0f0a;font-family:'Rubik',sans-serif;color:var(--ink)}
+#scene{position:fixed;inset:0}
+canvas{display:block}
+.hud{position:fixed;z-index:10;user-select:none}
+.hidden{display:none!important}
+/* top bar */
+#topbar{top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:linear-gradient(180deg,rgba(26,13,8,.92),rgba(26,13,8,.75) 80%,transparent);}
+#topbar .brand{font-family:'Fredoka One',cursive;font-size:20px;color:var(--gold);letter-spacing:1px;text-shadow:0 2px 0 rgba(0,0,0,.5)}
+#topbar .brand span{color:var(--red2)}
+#daymoney{display:flex;gap:14px;align-items:center;font-weight:800;color:var(--cream);font-size:15px}
+#money{color:var(--gold)}
+#patwrap{display:flex;align-items:center;gap:8px;min-width:170px;justify-content:flex-end}
+#patname{color:var(--cream);font-weight:600;font-size:13px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#patbar{width:80px;height:10px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden}
+#patfill{height:100%;width:100%;border-radius:6px;background:linear-gradient(90deg,#e74c3c,#f0b429,#7dc24b);transition:width .3s}
+/* ticket */
+#ticket{top:64px;right:14px;width:230px;background:var(--paper);border-radius:4px;padding:14px 16px 12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);transform:rotate(1.2deg);border-top:6px solid var(--red);
+  background-image:repeating-linear-gradient(0deg,transparent 0 24px,rgba(0,0,0,.025) 24px 25px);}
+#ticket h3{font-family:'Fredoka One',cursive;font-size:15px;letter-spacing:.5px;border-bottom:2px dashed #b09a78;padding-bottom:6px;margin-bottom:8px}
+#ticket .trow{display:flex;justify-content:space-between;font-size:13px;font-weight:600;padding:2.5px 0}
+#ticket .trow .v{color:#7a4a1e;text-align:right}
+#ticket .tops{margin-top:6px;border-top:2px dashed #b09a78;padding-top:6px}
+#ticket .foot{margin-top:8px;font-size:11px;color:#8a7355;text-align:center;letter-spacing:2px}
+/* station nav */
+#stations{bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.stbtn{font-family:'Fredoka One',cursive;font-size:14px;letter-spacing:.5px;color:var(--cream);
+  background:rgba(30,16,10,.85);border:2px solid rgba(240,180,41,.35);border-radius:10px;
+  padding:9px 16px;cursor:pointer;transition:all .15s}
+.stbtn small{display:block;font-family:'Rubik';font-weight:600;font-size:9px;opacity:.6;letter-spacing:1px}
+.stbtn.active{background:var(--red);border-color:var(--gold);transform:translateY(-3px);box-shadow:0 6px 14px rgba(0,0,0,.4)}
+.stbtn:hover{border-color:var(--gold)}
+/* tray */
+#tray{bottom:14px;left:14px;display:flex;flex-direction:column;gap:6px}
+.ing{display:flex;align-items:center;gap:9px;background:rgba(30,16,10,.85);border:2px solid rgba(255,255,255,.12);
+  border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--cream);font-weight:600;font-size:13px;transition:all .12s}
+.ing .dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.3)}
+.ing.sel{border-color:var(--gold);background:var(--red);transform:translateX(4px)}
+.ing:hover{border-color:var(--gold)}
+/* action button */
+#action{bottom:14px;right:14px;font-family:'Fredoka One',cursive;font-size:17px;letter-spacing:1px;
+  color:#fff;background:linear-gradient(180deg,var(--red2),var(--red));border:none;border-radius:12px;
+  padding:14px 26px;cursor:pointer;box-shadow:0 6px 0 #7c2318,0 10px 20px rgba(0,0,0,.4);transition:all .1s}
+#action:hover{filter:brightness(1.08)}
+#action:active{transform:translateY(4px);box-shadow:0 2px 0 #7c2318}
+/* cut bar */
+#cutbar{bottom:70px;right:14px;display:flex;gap:6px}
+.cutbtn{font-family:'Fredoka One',cursive;font-size:15px;color:var(--cream);background:rgba(30,16,10,.85);
+  border:2px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 14px;cursor:pointer}
+.cutbtn:hover,.cutbtn.sel{border-color:var(--gold);background:var(--red)}
+/* oven timer */
+#ovenbar{bottom:70px;left:50%;transform:translateX(-50%);width:280px;background:rgba(30,16,10,.9);
+  border:2px solid rgba(240,180,41,.4);border-radius:12px;padding:10px 14px}
+#ovenbar .lbl{display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:var(--cream);letter-spacing:1px;margin-bottom:6px}
+#ovenbar .lbl .tgt{color:var(--gold)}
+#oventrack{position:relative;height:12px;background:rgba(255,255,255,.12);border-radius:7px;overflow:hidden}
+#ovenfill{height:100%;width:0%;background:linear-gradient(90deg,#f0b429,#e67e22,#c0392b);border-radius:7px}
+#ovenmark{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff;box-shadow:0 0 6px #fff}
+/* toast */
+#toast{top:70px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--cream);
+  font-weight:600;font-size:14px;padding:10px 22px;border-radius:24px;border:2px solid var(--gold);
+  opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+/* modal */
+#modalwrap{inset:0;background:var(--shade);display:flex;align-items:center;justify-content:center;z-index:40}
+#modal{background:var(--paper);border-radius:14px;border-top:8px solid var(--red);width:340px;max-width:92vw;
+  padding:26px 28px;box-shadow:0 24px 60px rgba(0,0,0,.6);text-align:center;transform:rotate(-.6deg)}
+#modal h2{font-family:'Fredoka One',cursive;font-size:26px;margin-bottom:2px}
+#modal .rank{font-family:'Fredoka One',cursive;font-size:52px;line-height:1;margin:8px 0 2px}
+#modal .sub{font-size:13px;color:#7a6248;font-weight:600;margin-bottom:12px}
+#modal .rows{text-align:left;font-size:14px;font-weight:600}
+#modal .rows .r{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #c9b490}
+#modal .rows .r b{color:#7a4a1e}
+#modal .tip{margin-top:12px;font-family:'Fredoka One',cursive;font-size:19px;color:var(--red)}
+#modal button{margin-top:16px;font-family:'Fredoka One',cursive;font-size:16px;letter-spacing:1px;color:#fff;
+  background:linear-gradient(180deg,var(--red2),var(--red));border:none;border-radius:10px;padding:12px 26px;
+  cursor:pointer;box-shadow:0 5px 0 #7c2318}
+#modal button:active{transform:translateY(3px);box-shadow:0 2px 0 #7c2318}
+/* title screen */
+#title{inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%,rgba(90,30,15,.88),rgba(16,8,5,.96));text-align:center}
+#title h1{font-family:'Fredoka One',cursive;font-size:min(64px,11vw);color:var(--cream);letter-spacing:2px;
+  text-shadow:0 4px 0 var(--red),0 10px 30px rgba(0,0,0,.6);transform:rotate(-2deg)}
+#title h1 span{color:var(--gold)}
+#title .tag{font-family:'Fredoka One',cursive;color:var(--red2);font-size:min(22px,5vw);letter-spacing:6px;margin:6px 0 26px}
+#title .how{background:rgba(0,0,0,.35);border:2px dashed rgba(240,180,41,.5);border-radius:14px;
+  padding:16px 26px;color:var(--cream);font-size:14px;font-weight:600;line-height:1.9;max-width:520px;margin-bottom:28px}
+#title .how b{color:var(--gold)}
+#startbtn{font-family:'Fredoka One',cursive;font-size:24px;letter-spacing:2px;color:#fff;border:none;border-radius:14px;
+  padding:18px 46px;cursor:pointer;background:linear-gradient(180deg,var(--red2),var(--red));
+  box-shadow:0 7px 0 #7c2318,0 14px 30px rgba(0,0,0,.5)}
+#startbtn:active{transform:translateY(5px);box-shadow:0 2px 0 #7c2318}
+#best{margin-top:16px;color:rgba(247,236,215,.65);font-weight:600;font-size:13px;letter-spacing:1px}
+#err{bottom:4px;left:4px;z-index:99;color:#ff8;font:11px monospace;max-width:60vw;pointer-events:none}
+@media(max-width:760px){
+  #ticket{width:180px;padding:10px 12px}
+  #tray .ing{font-size:11px;padding:5px 9px}
+  #title .how{font-size:12px}
+}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<div id="topbar" class="hud hidden">
+  <div class="brand">PAPA'S <span>PIZZERIA</span> 3D</div>
+  <div id="daymoney"><span id="day">DAY 1</span><span id="money">$0.00</span></div>
+  <div id="patwrap"><span id="patname"></span><div id="patbar"><div id="patfill"></div></div></div>
+</div>
+
+<div id="ticket" class="hud hidden">
+  <h3 id="tname">ORDER</h3>
+  <div class="trow"><span>Sauce</span><span class="v" id="tsauce"></span></div>
+  <div class="trow"><span>Cheese</span><span class="v" id="tcheese"></span></div>
+  <div class="tops" id="ttops"></div>
+  <div class="trow" style="margin-top:6px"><span>Bake</span><span class="v" id="tbake"></span></div>
+  <div class="trow"><span>Cut</span><span class="v" id="tcut"></span></div>
+  <div class="foot">PAPA'S PIZZERIA</div>
+</div>
+
+<div id="tray" class="hud hidden"></div>
+
+<div id="ovenbar" class="hud hidden">
+  <div class="lbl"><span>OVEN</span><span class="tgt" id="oventgt"></span></div>
+  <div id="oventrack"><div id="ovenfill"></div><div id="ovenmark"></div></div>
+</div>
+
+<div id="cutbar" class="hud hidden">
+  <button class="cutbtn" data-cuts="4">4 CUTS</button>
+  <button class="cutbtn" data-cuts="6">6 CUTS</button>
+  <button class="cutbtn" data-cuts="8">8 CUTS</button>
+</div>
+
+<div id="stations" class="hud hidden">
+  <button class="stbtn" data-st="order">ORDER<small>1</small></button>
+  <button class="stbtn" data-st="build">BUILD<small>2</small></button>
+  <button class="stbtn" data-st="oven">OVEN<small>3</small></button>
+  <button class="stbtn" data-st="cut">CUT<small>4</small></button>
+</div>
+
+<button id="action" class="hud hidden"></button>
+<div id="toast" class="hud"></div>
+
+<div id="modalwrap" class="hud hidden">
+  <div id="modal"></div>
+</div>
+
+<div id="title" class="hud">
+  <h1>PAPA'S <span>PIZZERIA</span></h1>
+  <div class="tag">NOW IN 3D</div>
+  <div class="how">
+    Take the order at the <b>counter</b> - build the pie at the <b>prep table</b> -
+    bake it in the <b>brick oven</b> - <b>cut</b> it right - serve it hot.<br>
+    Match the ticket: sauce, cheese, toppings on the right side,<br>
+    bake time, cut count. Accuracy earns tips. Slow service loses them.<br>
+    Keys <b>1-4</b> jump between stations.
+  </div>
+  <button id="startbtn">START SHIFT</button>
+  <div id="best"></div>
+</div>
+
+<div id="err" class="hud"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+window.onerror=function(m,s,l){document.getElementById('err').textContent='ERR: '+m+' @'+l;};
+
+// ============ helpers ============
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function toast(msg,ms){const t=$('toast');t.textContent=msg;t.style.opacity=1;clearTimeout(t._to);t._to=setTimeout(()=>t.style.opacity=0,ms||2200);}
+
+// audio
+let AC=null;
+function beep(f,d,type,g){try{
+  AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  const o=AC.createOscillator(),gn=AC.createGain();
+  o.type=type||'square';o.frequency.value=f;gn.gain.value=g||.06;
+  o.connect(gn);gn.connect(AC.destination);o.start();
+  gn.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+(d||.09));
+  o.stop(AC.currentTime+(d||.09));
+}catch(e){}}
+const sfx={
+  place:()=>beep(520,.07,'square',.05),
+  ding:()=>{beep(880,.12,'sine',.08);setTimeout(()=>beep(1320,.16,'sine',.08),110);},
+  cash:()=>{beep(1046,.09,'square',.06);setTimeout(()=>beep(1568,.14,'square',.06),90);},
+  bad:()=>beep(180,.25,'sawtooth',.06),
+  pop:()=>beep(340,.05,'triangle',.05)
+};
+
+// ============ three setup ============
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x241109);
+scene.fog=new THREE.Fog(0x241109,14,30);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,100);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.15;
+$('scene').appendChild(renderer.domElement);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+
+// lights
+scene.add(new THREE.AmbientLight(0xffe0c0,.35));
+const hemi=new THREE.HemisphereLight(0xffd9a0,0x402015,.35);scene.add(hemi);
+const key=new THREE.DirectionalLight(0xfff0dd,.85);
+key.position.set(6,10,6);key.castShadow=true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.left=-12;key.shadow.camera.right=12;key.shadow.camera.top=12;key.shadow.camera.bottom=-12;
+scene.add(key);
+const ovenGlow=new THREE.PointLight(0xff5a1a,1.4,6);ovenGlow.position.set(4.6,1.5,-.9);scene.add(ovenGlow);
+const lamp1=new THREE.PointLight(0xffc46b,.7,7);lamp1.position.set(-2,3.4,-1.4);scene.add(lamp1);
+const lamp2=new THREE.PointLight(0xffc46b,.7,7);lamp2.position.set(0,3.4,1.2);scene.add(lamp2);
+
+// canvas texture helpers
+function canvasTex(w,h,fn,rx,ry){
+  const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
+  if(rx){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry||rx);}
+  return t;
+}
+// checkered floor
+const floorTex=canvasTex(256,256,(x)=>{
+  for(let i=0;i<8;i++)for(let j=0;j<8;j++){
+    x.fillStyle=(i+j)%2?'#8c2f22':'#e8d9bd';x.fillRect(i*32,j*32,32,32);
+  }
+  x.fillStyle='rgba(0,0,0,.08)';for(let i=0;i<=8;i++){x.fillRect(i*32-1,0,2,256);x.fillRect(0,i*32-1,256,2);}
+},6,4);
+// chalkboard menu
+const menuTex=canvasTex(512,384,(x,w,h)=>{
+  x.fillStyle='#20241f';x.fillRect(0,0,w,h);
+  x.strokeStyle='#c9a86a';x.lineWidth=14;x.strokeRect(7,7,w-14,h-14);
+  x.fillStyle='#f7ecd7';x.textAlign='center';
+  x.font='bold 46px Georgia';x.fillText("PAPA'S",w/2,70);
+  x.font='bold 30px Georgia';x.fillStyle='#f0b429';x.fillText('P I Z Z E R I A',w/2,108);
+  x.strokeStyle='rgba(247,236,215,.5)';x.lineWidth=2;
+  x.beginPath();x.moveTo(60,128);x.lineTo(w-60,128);x.stroke();
+  x.font='24px Georgia';x.fillStyle='#f7ecd7';x.textAlign='left';
+  const rows=[['CLASSIC PIE','$8'],['PEPPERONI','$10'],['GARDEN VEG','$10'],['WORKS','$12'],['SLICE','$2']];
+  rows.forEach((r,i)=>{const y=170+i*38;x.fillText(r[0],70,y);x.textAlign='right';x.fillText(r[1],w-70,y);x.textAlign='left';});
+});
+// poster
+const posterTex=canvasTex(256,320,(x,w,h)=>{
+  x.fillStyle='#e8d9bd';x.fillRect(0,0,w,h);
+  x.fillStyle='#c0392b';x.beginPath();x.arc(w/2,120,70,0,7);x.fill();
+  x.fillStyle='#f0b429';for(let i=0;i<6;i++){x.beginPath();x.arc(w/2+Math.cos(i*1.9)*38,120+Math.sin(i*1.9)*38,11,0,7);x.fill();}
+  x.fillStyle='#2c1f16';x.font='bold 30px Georgia';x.textAlign='center';x.fillText('FRESH',w/2,240);x.fillText('DAILY',w/2,275);
+});
+
+function box(w,h,d,color,x,y,z,ry){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.85}));
+  m.position.set(x,y,z);if(ry)m.rotation.y=ry;m.castShadow=m.receiveShadow=true;return m;
+}
+function cyl(rt,rb,h,color,x,y,z,seg){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||24),new THREE.MeshStandardMaterial({color,roughness:.8}));
+  m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;return m;
+}
+
+// ============ room ============
+const room=new THREE.Group();scene.add(room);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(24,16),new THREE.MeshStandardMaterial({map:floorTex,roughness:.9}));
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;room.add(floor);
+// walls
+const wallMat=new THREE.MeshStandardMaterial({color:0xd8b28a,roughness:.95});
+const wainMat=new THREE.MeshStandardMaterial({color:0x7c4a2d,roughness:.9});
+function wall(w,h,x,y,z,ry){
+  const g=new THREE.Group();
+  const top=new THREE.Mesh(new THREE.PlaneGeometry(w,h-1.1),wallMat);top.position.y=(h-1.1)/2+1.1;top.receiveShadow=true;g.add(top);
+  const wn=new THREE.Mesh(new THREE.PlaneGeometry(w,1.1),wainMat);wn.position.y=.55;wn.receiveShadow=true;g.add(wn);
+  g.position.set(x,y,z);g.rotation.y=ry;room.add(g);
+}
+wall(24,6,0,0,-8,0);
+wall(16,6,-12,0,0,Math.PI/2);
+wall(16,6,12,0,0,-Math.PI/2);
+// ceiling hint: dark plane
+const ceil=new THREE.Mesh(new THREE.PlaneGeometry(24,16),new THREE.MeshStandardMaterial({color:0x3a2318,roughness:1}));
+ceil.rotation.x=Math.PI/2;ceil.position.y=6;room.add(ceil);
+// menu board + poster on back wall
+const menu=new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.5),new THREE.MeshStandardMaterial({map:menuTex,roughness:.9}));
+menu.position.set(-2.5,3.1,-7.93);room.add(menu);
+const poster=new THREE.Mesh(new THREE.PlaneGeometry(1.6,2),new THREE.MeshStandardMaterial({map:posterTex,roughness:.9}));
+poster.position.set(2.6,2.9,-7.93);room.add(poster);
+// door
+const doorF=box(1.9,3.3,.25,0x5a3620,0,1.65,-7.9);room.add(doorF);
+const door=box(1.5,2.9,.12,0x8c5a34,0,1.45,-7.85);room.add(door);
+const openSign=box(.9,.4,.06,0x111111,0,3.1,-7.78);
+openSign.material=new THREE.MeshStandardMaterial({color:0x220000,emissive:0xff2222,emissiveIntensity:.9});
+room.add(openSign);
+// hanging lamps
+[[-2,-1.4],[0,1.2],[4,-.6]].forEach(p=>{
+  const cord=cyl(.02,.02,1.2,0x222222,p[0],5.4,p[1]);room.add(cord);
+  const shade=new THREE.Mesh(new THREE.ConeGeometry(.45,.4,20,1,true),new THREE.MeshStandardMaterial({color:0xb03028,roughness:.6,side:THREE.DoubleSide}));
+  shade.position.set(p[0],4.75,p[1]);shade.castShadow=true;room.add(shade);
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,12,12),new THREE.MeshStandardMaterial({color:0xffe0a0,emissive:0xffc46b,emissiveIntensity:1.4}));
+  bulb.position.set(p[0],4.6,p[1]);room.add(bulb);
+});
+// customer counter (z=-2.4)
+const counterTop=box(9,.18,1.1,0x8c5a34,0,1.06,-2.4);room.add(counterTop);
+const counterBase=box(9,1,1,0xa03a2c,0,.5,-2.4);room.add(counterBase);
+const counterTrim=box(9.1,.08,1.15,0xf0b429,0,1.0,-2.4);room.add(counterTrim);
+// cash register
+const reg=box(.55,.45,.5,0x3a3a3f,3.6,1.38,-2.4);room.add(reg);
+const regScr=box(.4,.22,.04,0x88ffcc,3.6,1.62,-2.2);regScr.material=new THREE.MeshStandardMaterial({color:0x0a2a1a,emissive:0x33cc88,emissiveIntensity:.7});room.add(regScr);
+// prep table (x=-4.6)
+const prep=new THREE.Group();prep.position.set(-4.6,0,0);scene.add(prep);
+prep.add(box(3.4,.12,1.6,0xb9bec4,0,1.02,0));
+prep.add(box(3.2,.9,1.4,0x8a9096,0,.5,0));
+// ingredient bowls on prep table (decor, back row)
+const INGDEFS=[
+  {id:'sauce',label:'Sauce',color:0xc0392b,dot:'#c0392b'},
+  {id:'cheese',label:'Cheese',color:0xf5d76e,dot:'#f5d76e'},
+  {id:'pepperoni',label:'Pepperoni',color:0xa32b20,dot:'#a32b20'},
+  {id:'mushroom',label:'Mushroom',color:0xd9c8a9,dot:'#d9c8a9'},
+  {id:'olive',label:'Olives',color:0x3d4035,dot:'#3d4035'},
+  {id:'pepper',label:'Peppers',color:0x4d8c3a,dot:'#4d8c3a'},
+  {id:'sausage',label:'Sausage',color:0x7a4a2a,dot:'#7a4a2a'},
+];
+INGDEFS.forEach((ing,i)=>{
+  const bx=-1.35+i*.45;
+  const bowl=cyl(.17,.13,.12,0xe8e8e8,bx,1.14,-.55);prep.add(bowl);
+  const cont=cyl(.14,.14,.05,ing.color,bx,1.19,-.55);prep.add(cont);
+});
+// brick oven (x=4.6)
+const oven=new THREE.Group();oven.position.set(4.6,0,-.6);scene.add(oven);
+const brickMat=new THREE.MeshStandardMaterial({color:0x9c4a32,roughness:.95});
+const obody=new THREE.Mesh(new THREE.BoxGeometry(2.6,2.6,2),brickMat);obody.position.y=1.3;obody.castShadow=obody.receiveShadow=true;oven.add(obody);
+const dome=new THREE.Mesh(new THREE.SphereGeometry(1.3,20,14,0,Math.PI*2,0,Math.PI/2),brickMat);dome.position.y=2.6;dome.scale.z=.77;dome.castShadow=true;oven.add(dome);
+const mouth=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1),new THREE.MeshStandardMaterial({color:0x1a0800,emissive:0xff4400,emissiveIntensity:.5}));
+mouth.position.set(0,1.1,1.01);oven.add(mouth);
+const arch=new THREE.Mesh(new THREE.TorusGeometry(.85,.16,10,20,Math.PI),new THREE.MeshStandardMaterial({color:0x6e2f1d,roughness:.9}));
+arch.position.set(0,1.55,1.02);oven.add(arch);
+const chimney=cyl(.28,.34,1.4,0x6e2f1d,0,3.9,0);oven.add(chimney);
+// cut table (x=.6,z=1.4)
+const cutT=new THREE.Group();cutT.position.set(.6,0,1.6);scene.add(cutT);
+cutT.add(box(1.8,.1,1.4,0x8c5a34,0,1.02,0));
+cutT.add(box(1.6,.95,1.2,0x6e4526,0,.5,0));
+const board=cyl(.75,.75,.05,0xd8b890,0,1.1,0);cutT.add(board);
+// pizza boxes stack
+for(let i=0;i<4;i++){room.add(box(.85,.09,.85,i%2?0xc0392b:0xe8d9bd,-8.2,1.1+i*.095,-2.4,i*.15));}
+// plant
+const pot=cyl(.22,.16,.3,0xa03a2c,-10.8,.15,-6.5);room.add(pot);
+const bush=new THREE.Mesh(new THREE.IcosahedronGeometry(.42,0),new THREE.MeshStandardMaterial({color:0x3f7a35,roughness:1,flatShading:true}));
+bush.position.set(-10.8,.72,-6.5);bush.castShadow=true;room.add(bush);
+// wall clock
+const clock=cyl(.35,.35,.06,0xf7ecd7,-6,4.2,-7.9);clock.rotation.x=Math.PI/2;room.add(clock);
+
+// ============ customers ============
+const NAMES=['Tony','Rita','Big Sal','Mindy','Chuck','Wally','Penny','Rico','Sue','Gino','Fran','Otto','Lisa','Marco','Tess','Bruno','Nana Rosa','Eddie','Pearl','Vito'];
+const SKINS=[0xf2c29b,0xe0a878,0xc98a5a,0x8a5a34,0x6e4526];
+const SHIRTS=[0xc0392b,0x2e6da4,0x4d8c3a,0xe67e22,0x8e44ad,0xd4a017,0x2a8a8a,0xd45a7a];
+const customerGroup=new THREE.Group();scene.add(customerGroup);
+function makeCustomer(name){
+  const g=new THREE.Group();
+  const skin=pick(SKINS),shirt=pick(SHIRTS);
+  const legs=box(.34,.5,.24,0x333a4a,0,.25,0);g.add(legs);
+  const body=cyl(.26,.3,.72,shirt,0,.86,0);g.add(body);
+  const armL=cyl(.07,.07,.55,shirt,-.34,.95,0);armL.rotation.z=.25;g.add(armL);
+  const armR=cyl(.07,.07,.55,shirt,.34,.95,0);armR.rotation.z=-.25;g.add(armR);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.24,18,14),new THREE.MeshStandardMaterial({color:skin,roughness:.7}));
+  head.position.y=1.48;head.castShadow=true;g.add(head);
+  // hair
+  const hairStyle=Math.random();
+  if(hairStyle<.4){
+    const hair=new THREE.Mesh(new THREE.SphereGeometry(.25,16,10,0,Math.PI*2,0,Math.PI/2.4),new THREE.MeshStandardMaterial({color:pick([0x2a1a10,0x4a2e18,0x888888,0x1a1a1a,0xb56a2a]),roughness:1}));
+    hair.position.y=1.56;g.add(hair);
+  }else if(hairStyle<.6){
+    const hat=cyl(.2,.26,.14,0xc0392b,0,1.68,0);g.add(hat);
+    const brim=cyl(.3,.3,.03,0xc0392b,0,1.62,0);g.add(brim);
+  }
+  // eyes
+  [[-.09,1],[.09,1]].forEach(e=>{
+    const eye=new THREE.Mesh(new THREE.SphereGeometry(.035,8,8),new THREE.MeshStandardMaterial({color:0x1a1210}));
+    eye.position.set(e[0],1.5,-.2);g.add(eye);
+  });
+  g.userData={name,armL,armR,head,baseY:0};
+  customerGroup.add(g);
+  return g;
+}
+
+// ============ pizza ============
+const TOPCOLORS={pepperoni:0xa32b20,mushroom:0xd9c8a9,olive:0x3d4035,pepper:0x4d8c3a,sausage:0x7a4a2a};
+function makeToppingMesh(type){
+  let m;
+  if(type==='pepperoni'){m=cyl(.075,.075,.025,TOPCOLORS[type],0,0,0,12);}
+  else if(type==='mushroom'){
+    m=new THREE.Group();
+    const cap=cyl(.07,.09,.04,TOPCOLORS[type],0,.02,0,8);m.add(cap);
+    return m;
+  }
+  else if(type==='olive'){m=new THREE.Mesh(new THREE.TorusGeometry(.045,.022,8,12),new THREE.MeshStandardMaterial({color:TOPCOLORS[type],roughness:.8}));m.rotation.x=Math.PI/2;}
+  else if(type==='pepper'){m=new THREE.Mesh(new THREE.TorusGeometry(.06,.014,6,10),new THREE.MeshStandardMaterial({color:TOPCOLORS[type],roughness:.8}));m.rotation.x=Math.PI/2;}
+  else{const g=new THREE.SphereGeometry(.06,10,8);g.scale(1,.5,1);m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:TOPCOLORS[type],roughness:.9}));}
+  m.castShadow=true;return m;
+}
+const PR=.62; // pizza radius
+function makePizza(){
+  const g=new THREE.Group();
+  const crust=cyl(PR,PR*.94,.09,0xe8c284,0,.045,0,32);crust.name='crust';g.add(crust);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(PR-.02,.05,10,32),new THREE.MeshStandardMaterial({color:0xd9a860,roughness:.85}));
+  rim.rotation.x=Math.PI/2;rim.position.y=.09;rim.name='rim';g.add(rim);
+  const sauce=cyl(PR-.1,PR-.1,.02,0xc0392b,0,.095,0,32);sauce.name='sauce';sauce.scale.set(.001,1,.001);sauce.visible=false;g.add(sauce);
+  const cheese=cyl(PR-.13,PR-.13,.025,0xf5d76e,0,.105,0,32);cheese.name='cheese';cheese.scale.set(.001,1,.001);cheese.visible=false;g.add(cheese);
+  const tops=new THREE.Group();tops.name='tops';tops.position.y=.12;g.add(tops);
+  const cuts=new THREE.Group();cuts.name='cuts';cuts.position.y=.125;g.add(cuts);
+  g.userData={sauceLv:0,cheeseLv:0,placed:[],cutCount:0};
+  return g;
+}
+function setSauce(g,lv){const s=g.getObjectByName('sauce');s.visible=lv>0;const sc=[0,.55,.8,1][lv];s.scale.set(sc,1,sc);}
+function setCheese(g,lv){const s=g.getObjectByName('cheese');s.visible=lv>0;const sc=[0,.5,.78,1][lv];s.scale.set(sc,1,sc);}
+function drawCuts(g,n){
+  const grp=g.getObjectByName('cuts');while(grp.children.length)grp.remove(grp.children[0]);
+  const lines=n/2;
+  for(let i=0;i<lines;i++){
+    const bar=box(.03,.012,PR*2-.16,0x8a5a2a,0,0,0);
+    bar.rotation.y=i*Math.PI/lines;grp.add(bar);
+  }
+}
+function bakeTint(g,t){
+  // t in seconds: 0 raw, 18 golden, 30+ burnt
+  const k=clamp(t/26,0,1);
+  const c1=new THREE.Color(0xe8c284),c2=new THREE.Color(0xa86a28),c3=new THREE.Color(0x3a2010);
+  const col=k<.6?c1.clone().lerp(c2,k/.6):c2.clone().lerp(c3,(k-.6)/.4);
+  g.getObjectByName('crust').material.color.copy(col);
+  g.getObjectByName('rim').material.color.copy(col.clone().multiplyScalar(.92));
+  const ch=new THREE.Color(0xf5d76e).lerp(new THREE.Color(0xc88a2a),k);
+  g.getObjectByName('cheese').material.color.copy(ch);
+  const sa=new THREE.Color(0xc0392b).lerp(new THREE.Color(0x6e1f14),k);
+  g.getObjectByName('sauce').material.color.copy(sa);
+}
+
+// ============ camera stations ============
+const STATIONS={
+  order:{pos:new THREE.Vector3(0,2.3,1.6),look:new THREE.Vector3(0,1.35,-2.6)},
+  build:{pos:new THREE.Vector3(-4.6,3.1,1.9),look:new THREE.Vector3(-4.6,1.05,-.1)},
+  oven:{pos:new THREE.Vector3(4.6,1.9,2.4),look:new THREE.Vector3(4.6,1.35,-.7)},
+  cut:{pos:new THREE.Vector3(.6,2.7,3.4),look:new THREE.Vector3(.6,1.1,1.6)},
+};
+let curStation='order',camTarget=null;
+function goStation(st){
+  curStation=st;camTarget=STATIONS[st];
+  document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('active',b.dataset.st===st));
+  refreshUI();
+}
+
+// ============ game state ============
+const G={
+  running:false,day:1,money:0,served:0,dayScoreSum:0,dayServed:0,
+  custPerDay:5,queue:[],active:null,pizza:null,pizzaState:'none',
+  bakeT:0,bakeTarget:18,selIng:null,best:parseFloat(localStorage.getItem('papas3d_best')||'0'),
+};
+$('best').textContent=G.best>0?('BEST DAY: $'+G.best.toFixed(2)):'';
+
+function genOrder(){
+  const d=G.day;
+  const nTop=1+Math.min(2,Math.floor(Math.random()*Math.min(3,1+d*.5)));
+  const types=['pepperoni','mushroom','olive','pepper','sausage'].sort(()=>Math.random()-.5).slice(0,nTop);
+  const tops=types.map(t=>({type:t,count:4+Math.floor(Math.random()*6),zone:pick(['whole','left','right'])}));
+  const bake=pick([12,18,18,24]);
+  return {
+    sauce:1+Math.floor(Math.random()*3),
+    cheese:1+Math.floor(Math.random()*3),
+    tops,bake,cuts:pick([4,6,8]),
+    price:6+tops.length*1.5+tops.reduce((s,t)=>s+t.count*.18,0)
+  };
+}
+const LV=n=>['NONE','LIGHT','NORMAL','EXTRA'][n];
+const ZN={whole:'WHOLE PIE',left:'LEFT HALF',right:'RIGHT HALF'};
+const BN={12:'LIGHT',18:'NORMAL',24:'WELL DONE'};
+
+function spawnCustomer(){
+  const name=NAMES.splice(Math.floor(Math.random()*NAMES.length),1)[0]||'Guest';
+  const mesh=makeCustomer(name);
+  mesh.position.set(rand(-.4,.4),0,-7.2);
+  const c={name,mesh,order:null,patience:100,stage:'walking',slotX:rand(-1.6,1.2),bob:Math.random()*10};
+  G.queue.push(c);
+}
+
+function takeOrder(c){
+  c.order=genOrder();c.stage='ordered';G.active=c;G.bakeTarget=c.order.bake;
+  // build a fresh pizza on the prep table
+  G.pizza=makePizza();G.pizzaState='building';
+  G.pizza.position.set(-4.6,1.1,-.1);scene.add(G.pizza);
+  $('tname').textContent=c.name.toUpperCase();
+  $('tsauce').textContent=LV[c.order.sauce];
+  $('tcheese').textContent=LV[c.order.cheese];
+  $('ttops').innerHTML=c.order.tops.map(t=>'<div class="trow"><span>'+t.type.charAt(0).toUpperCase()+t.type.slice(1)+' x'+t.count+'</span><span class="v">'+ZN[t.zone]+'</span></div>').join('');
+  $('tbake').textContent=BN[c.order.bake];
+  $('tcut').textContent=c.order.cuts+' CUTS';
+  $('ticket').classList.remove('hidden');
+  sfx.ding();toast(c.name+"'s order is on the ticket - to the prep table!");
+  goStation('build');
+}
+
+// ============ scoring ============
+function scoreOrder(c){
+  const o=c.order,u=G.pizza.userData;
+  const lv=(a,b)=>a===b?10:(Math.abs(a-b)===1?5:0);
+  const sSauce=lv(u.sauceLv,o.sauce),sCheese=lv(u.cheeseLv,o.cheese);
+  let sTop=0;const per=40/o.tops.length;
+  o.tops.forEach(t=>{
+    let inZ=0,outZ=0;
+    u.placed.filter(p=>p.type===t.type).forEach(p=>{
+      const zone=p.x<-.04?'left':(p.x>.04?'right':'mid');
+      const ok=t.zone==='whole'||(t.zone==='left'&&(zone==='left'||zone==='mid'))||(t.zone==='right'&&(zone==='right'||zone==='mid'));
+      ok?inZ++:outZ++;
+    });
+    let acc=Math.max(0,1-Math.abs(inZ-t.count)/Math.max(t.count,3));
+    acc*=Math.max(0,1-outZ*.15);
+    sTop+=per*acc;
+  });
+  const wanted=o.tops.map(t=>t.type);
+  const extra=u.placed.filter(p=>!wanted.includes(p.type)).length;
+  sTop=Math.max(0,sTop-extra*2);
+  const sBake=25*Math.max(0,1-Math.abs(G.bakeT-o.bake)/9);
+  const sCut=u.cutCount===o.cuts?15:0;
+  const total=Math.round(clamp(sSauce+sCheese+sTop+sBake+sCut,0,100));
+  const patMul=.4+.6*(c.patience/100);
+  const tip=Math.round(o.price*.4*(total/100)*patMul*100)/100;
+  return {total,tip,parts:{Sauce:Math.round(sSauce)+'/10',Cheese:Math.round(sCheese)+'/10',Toppings:Math.round(sTop)+'/40',Bake:Math.round(sBake)+'/25',Cut:Math.round(sCut)+'/15'}};
+}
+function rank(s){return s>=95?'S':s>=85?'A':s>=70?'B':s>=50?'C':s>=30?'D':'F';}
+
+function serve(){
+  const c=G.active;if(!c||!G.pizza)return;
+  const r=scoreOrder(c);
+  const price=Math.round(c.order.price*100)/100;
+  G.money+=price+r.tip;G.dayScoreSum+=r.total;G.dayServed++;G.served++;
+  // pizza flies to customer
+  flyPizza=G.pizza;
+  if(flyPizza){flyPizza._fly=0;flyPizza._from=G.pizza.position.clone();flyPizza._to=new THREE.Vector3(c.slotX,1.25,-2.0);}
+  c.stage='served';c.happy=r.total>=70;c._leaveT=1.4;
+  G.active=null;G.pizza=null;G.pizzaState='none';G.bakeT=0;
+  $('ticket').classList.add('hidden');
+  r.total>=70?sfx.cash():sfx.bad();
+  // modal
+  $('modal').innerHTML=
+    '<h2>'+c.name.toUpperCase()+'</h2>'+
+    '<div class="rank" style="color:'+(r.total>=85?'#4d8c3a':r.total>=50?'#b57a1e':'#c0392b')+'">'+rank(r.total)+'</div>'+
+    '<div class="sub">'+r.total+' / 100'+(c.happy?' - they loved it!':' - not great...')+'</div>'+
+    '<div class="rows">'+Object.entries(r.parts).map(e=>'<div class="r"><span>'+e[0]+'</span><b>'+e[1]+'</b></div>').join('')+'</div>'+
+    '<div class="tip">PIE $'+price.toFixed(2)+' + TIP $'+r.tip.toFixed(2)+'</div>'+
+    '<button id="modbtn">'+(G.served>=G.custPerDay*G.day*0+G.custPerDay&&G.dayServed>=G.custPerDay?'END DAY':'NEXT')+'</button>';
+  $('modalwrap').classList.remove('hidden');
+  $('modbtn').onclick=()=>{
+    $('modalwrap').classList.add('hidden');sfx.pop();
+    if(G.dayServed>=G.custPerDay&&G.queue.length===0){endDay();}
+    else refreshUI();
+  };
+  updateMoney();
+}
+function endDay(){
+  if(G._ending)return;G._ending=true;
+  const avg=Math.round(G.dayScoreSum/Math.max(G.dayServed,1));
+  const dayEarn=G.money-(G._dayStart||0);
+  if(dayEarn>G.best){G.best=dayEarn;localStorage.setItem('papas3d_best',G.best);}
+  $('modal').innerHTML=
+    '<h2>DAY '+G.day+' DONE</h2>'+
+    '<div class="rank" style="color:#b57a1e">'+rank(avg)+'</div>'+
+    '<div class="sub">average score '+avg+' / 100</div>'+
+    '<div class="rows">'+
+    '<div class="r"><span>Pizzas served</span><b>'+G.dayServed+'</b></div>'+
+    '<div class="r"><span>Day earnings</span><b>$'+dayEarn.toFixed(2)+'</b></div>'+
+    '<div class="r"><span>Till total</span><b>$'+G.money.toFixed(2)+'</b></div>'+
+    '<div class="r"><span>Best day</span><b>$'+G.best.toFixed(2)+'</b></div></div>'+
+    '<button id="modbtn">OPEN DAY '+(G.day+1)+'</button>';
+  $('modalwrap').classList.remove('hidden');
+  $('modbtn').onclick=()=>{
+    $('modalwrap').classList.add('hidden');
+    G._ending=false;G.day++;G.dayServed=0;G.dayScoreSum=0;G._dayStart=G.money;G.served=0;
+    $('day').textContent='DAY '+G.day;
+    toast('Day '+G.day+' - customers are hungrier and in a hurry!');
+    for(let i=0;i<2;i++)setTimeout(spawnCustomer,i*2500);
+    refreshUI();
+  };
+}
+
+// ============ UI wiring ============
+let flyPizza=null;
+function updateMoney(){$('money').textContent='$'+G.money.toFixed(2);}
+function waitingCustomer(){return G.queue.find(c=>c.stage==='waiting')||G.queue.find(c=>c.stage==='walking');}
+
+function refreshUI(){
+  const st=curStation;
+  // tray only at build with a pizza being built
+  $('tray').classList.toggle('hidden',!(st==='build'&&G.pizzaState==='building'));
+  // cut bar at cut station with a baked pizza
+  $('cutbar').classList.toggle('hidden',!(st==='cut'&&G.pizzaState==='baked'));
+  // oven bar while baking
+  $('ovenbar').classList.toggle('hidden',G.pizzaState!=='oven');
+  // action button
+  const a=$('action');a.classList.add('hidden');a.onclick=null;
+  const w=waitingCustomer();
+  if(st==='order'&&w&&w.stage==='waiting'&&!G.active){
+    a.textContent='TAKE ORDER';a.classList.remove('hidden');
+    a.onclick=()=>{sfx.pop();takeOrder(w);};
+  }
+  if(st==='build'&&G.pizzaState==='building'){
+    a.textContent='TO OVEN >';a.classList.remove('hidden');
+    a.onclick=()=>{
+      const u=G.pizza.userData;
+      if(u.sauceLv===0&&u.cheeseLv===0){toast('A bare dough? At least add sauce or cheese.');}
+      G.pizzaState='oven';G.bakeT=0;G._dinged=false;
+      G.pizza.position.set(4.6,1.05,.45);G.pizza.scale.set(.85,.85,.85);
+      $('oventgt').textContent=BN[G.bakeTarget];
+      $('ovenmark').style.left=(G.bakeTarget/32*100)+'%';
+      sfx.pop();toast('In the oven - watch the bake bar!');goStation('oven');
+    };
+  }
+  if(st==='oven'&&G.pizzaState==='oven'){
+    a.textContent='TAKE OUT';a.classList.remove('hidden');
+    a.onclick=()=>{
+      G.pizzaState='baked';bakeTint(G.pizza,G.bakeT);
+      G.pizza.position.set(.6,1.14,1.6);G.pizza.scale.set(1,1,1);
+      sfx.ding();toast('Onto the board - cut it right!');goStation('cut');
+    };
+  }
+  if(st==='cut'&&G.pizzaState==='baked'&&G.pizza.userData.cutCount>0){
+    a.textContent='SERVE >';a.classList.remove('hidden');
+    a.onclick=()=>{sfx.pop();toast('Hot pie, coming out!');goStation('order');setTimeout(()=>{if(G.pizzaState==='baked'){G.pizzaState='serving';serve();}},700);};
+  }
+  if(st==='cut'&&G.pizzaState==='baked'&&G.pizza.userData.cutCount===0){
+    // need a cut first
+  }
+}
+// station nav
+document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{sfx.pop();goStation(b.dataset.st);});
+addEventListener('keydown',e=>{
+  if(!G.running)return;
+  const map={'1':'order','2':'build','3':'oven','4':'cut'};
+  if(map[e.key])goStation(map[e.key]);
+});
+// tray build
+INGDEFS.forEach(ing=>{
+  const d=document.createElement('div');d.className='ing';d.dataset.id=ing.id;
+  d.innerHTML='<div class="dot" style="background:'+ing.dot+'"></div>'+ing.label;
+  d.onclick=()=>{
+    G.selIng=ing.id;sfx.pop();
+    document.querySelectorAll('.ing').forEach(x=>x.classList.toggle('sel',x.dataset.id===ing.id));
+  };
+  $('tray').appendChild(d);
+});
+// cut buttons
+document.querySelectorAll('.cutbtn').forEach(b=>b.onclick=()=>{
+  if(!G.pizza||G.pizzaState!=='baked')return;
+  const n=parseInt(b.dataset.cuts);
+  G.pizza.userData.cutCount=n;drawCuts(G.pizza,n);sfx.place();
+  document.querySelectorAll('.cutbtn').forEach(x=>x.classList.toggle('sel',x===b));
+  refreshUI();
+});
+
+// pizza click: place ingredient
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+renderer.domElement.addEventListener('pointerdown',e=>{
+  if(!G.running)return;
+  mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);
+  ray.setFromCamera(mouse,camera);
+  if(curStation==='build'&&G.pizzaState==='building'&&G.selIng){
+    const hits=ray.intersectObject(G.pizza,true);
+    if(hits.length){
+      const p=G.pizza.worldToLocal(hits[0].point.clone());
+      const u=G.pizza.userData;
+      if(G.selIng==='sauce'){if(u.sauceLv<3){u.sauceLv++;setSauce(G.pizza,u.sauceLv);sfx.place();}else toast('Sauce is maxed');}
+      else if(G.selIng==='cheese'){if(u.cheeseLv<3){u.cheeseLv++;setCheese(G.pizza,u.cheeseLv);sfx.place();}else toast('Cheese is maxed');}
+      else{
+        if(Math.hypot(p.x,p.z)>PR-.12){toast('Too close to the crust edge');return;}
+        const count=u.placed.filter(q=>q.type===G.selIng).length;
+        if(count>=16){toast('Enough of that!');return;}
+        const tm=makeToppingMesh(G.selIng);
+        tm.position.set(p.x,0,p.z);
+        G.pizza.getObjectByName('tops').add(tm);
+        u.placed.push({type:G.selIng,x:p.x,z:p.z});
+        sfx.place();
+      }
+    }
+  }
+  // click a waiting customer to take their order
+  if(curStation==='order'){
+    const hits=ray.intersectObjects(customerGroup.children,true);
+    if(hits.length){
+      let g=hits[0].object;while(g.parent&&g.parent!==customerGroup)g=g.parent;
+      const c=G.queue.find(q=>q.mesh===g);
+      if(c&&c.stage==='waiting'&&!G.active){sfx.pop();takeOrder(c);}
+    }
+  }
+});
+
+// start
+$('startbtn').onclick=()=>{
+  sfx.ding();
+  $('title').classList.add('hidden');
+  ['topbar','stations'].forEach(i=>$(i).classList.remove('hidden'));
+  G.running=true;G._dayStart=0;
+  goStation('order');
+  toast('First customer coming in!');
+  setTimeout(spawnCustomer,1200);
+};
+
+// ============ animation ============
+const clk=new THREE.Clock();
+let ovenFlick=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clk.getDelta(),.05),t=clk.elapsedTime;
+  // camera ease
+  if(camTarget){
+    camera.position.lerp(camTarget.pos,1-Math.exp(-dt*4));
+    const lk=new THREE.Vector3();camera.getWorldDirection(lk);
+    camera.lookAt(camTarget.look);
+  }
+  // oven flicker
+  ovenFlick+=dt*10;
+  ovenGlow.intensity=1.2+Math.sin(ovenFlick)*.25+Math.sin(ovenFlick*2.7)*.12;
+  // customers
+  for(let i=G.queue.length-1;i>=0;i--){
+    const c=G.queue[i],m=c.mesh;
+    c.bob+=dt*4;
+    if(c.stage==='walking'){
+      const tx=c.slotX,tz=-3.3;
+      const dx=tx-m.position.x,dz=tz-m.position.z,d=Math.hypot(dx,dz);
+      if(d<.08){c.stage='waiting';refreshUI();}
+      else{
+        m.position.x+=dx/d*2.2*dt;m.position.z+=dz/d*2.2*dt;
+        m.rotation.y=Math.atan2(dx,dz);
+        m.position.y=Math.abs(Math.sin(c.bob*2))*.05;
+      }
+    }else if(c.stage==='waiting'||c.stage==='ordered'){
+      m.rotation.y+=(0-m.rotation.y)*dt*3;
+      m.position.y=Math.sin(c.bob)*.02;
+      m.userData.armL.rotation.x=Math.sin(c.bob)*.08;
+      m.userData.armR.rotation.x=-Math.sin(c.bob)*.08;
+      // patience
+      if(c.stage==='waiting'||c.stage==='ordered'){
+        c.patience=Math.max(0,c.patience-dt*(100/Math.max(35,95-G.day*5)));
+        if(c===G.active||c.stage==='waiting'){
+          $('patname').textContent=c.name;
+          $('patfill').style.width=c.patience+'%';
+        }
+        if(c.patience<=0&&c.stage!=='served'){
+          // storms out
+          c.stage='served';c.happy=false;c._leaveT=0;
+          if(c===G.active){
+            if(G.pizza){scene.remove(G.pizza);G.pizza=null;}
+            G.active=null;G.pizzaState='none';G.bakeT=0;
+            $('ticket').classList.add('hidden');
+          }
+          sfx.bad();toast(c.name+' stormed out! Too slow...');
+          if(G.dayServed>=G.custPerDay&&G.queue.length<=1){}
+          refreshUI();
+        }
+      }
+    }else if(c.stage==='served'){
+      c._leaveT=(c._leaveT||0)-dt;
+      if(c.happy)m.position.y=Math.abs(Math.sin(c.bob*3))*.08;
+      if(c._leaveT<=0){
+        m.position.z-=2.5*dt;
+        m.rotation.y=Math.PI+Math.sin(c.bob)*.2;
+        if(m.position.z<-9){customerGroup.remove(m);G.queue.splice(i,1);
+          if(G.running&&G.dayServed<G.custPerDay){
+            // keep the line moving
+            if(G.queue.filter(q=>q.stage!=='served').length<2&&G.served<G.custPerDay)setTimeout(spawnCustomer,rand(1000,2500));
+          }else if(G.running&&G.queue.length===0&&G.dayServed>=G.custPerDay&&!G.active){
+            endDay();
+          }
+        }
+      }
+    }
+  }
+  // spawn pressure: keep customers coming during the day
+  if(G.running&&G.dayServed+G.queue.filter(c=>c.stage!=='served').length<G.custPerDay&&G.queue.length<3&&Math.random()<dt*.08){
+    spawnCustomer();
+  }
+  // bake timer
+  if(G.pizzaState==='oven'&&G.pizza){
+    G.bakeT+=dt;
+    $('ovenfill').style.width=Math.min(100,G.bakeT/32*100)+'%';
+    if(!G._dinged&&G.bakeT>=G.bakeTarget){G._dinged=true;sfx.ding();}
+    bakeTint(G.pizza,G.bakeT);
+    if(G.bakeT>34){toast('It is on fire! Take it out!');G.bakeT=34;}
+  }
+  // pizza fly to customer
+  if(flyPizza){
+    flyPizza._fly+=dt*1.4;
+    const k=Math.min(1,flyPizza._fly);
+    flyPizza.position.lerpVectors(flyPizza._from,flyPizza._to,k);
+    flyPizza.position.y+=Math.sin(k*Math.PI)*.8;
+    flyPizza.rotation.y+=dt*6;
+    if(k>=1){scene.remove(flyPizza);flyPizza=null;}
+  }
+  renderer.render(scene,camera);
+}
+camera.position.set(0,3.2,5);
+camera.lookAt(0,1.2,-2);
+animate();
+</script>
+</body>
+</html>
