@@ -501,8 +501,8 @@ function takeOrder(c){
   G.pizza=makePizza();G.pizzaState='building';
   G.pizza.position.set(-4.6,1.1,-.1);scene.add(G.pizza);
   $('tname').textContent=c.name.toUpperCase();
-  $('tsauce').textContent=LV[c.order.sauce];
-  $('tcheese').textContent=LV[c.order.cheese];
+  $('tsauce').textContent=LV(c.order.sauce);
+  $('tcheese').textContent=LV(c.order.cheese);
   $('ttops').innerHTML=c.order.tops.map(t=>'<div class="trow"><span>'+t.type.charAt(0).toUpperCase()+t.type.slice(1)+' x'+t.count+'</span><span class="v">'+ZN[t.zone]+'</span></div>').join('');
   $('tbake').textContent=BN[c.order.bake];
   $('tcut').textContent=c.order.cuts+' CUTS';
